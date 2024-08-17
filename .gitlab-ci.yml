@@ -1,0 +1,31 @@
+image: keymetrics/pm2:6
+
+stages:
+  - deploy
+
+deploy_prod:
+  stage: deploy
+  script:
+    - echo "====== Deploy to production server ======"
+    - apk update && apk upgrade
+    - apk add git openssh bash
+    # Add target server`s secret key
+    - mkdir ~/.ssh
+    - echo $SSH_PRIVATE_KEY | base64 -d > ~/.ssh/harvestPro.pem
+    - chmod 700 ~/.ssh && chmod 400 ~/.ssh/*
+    - echo "Test ssh connection"
+    - echo "$SSH_USER@$SSH_HOST"
+    - cd ~/.ssh
+    - ssh -i "harvestPro.pem" -T -o StrictHostKeyChecking=no ubuntu@ec2-54-219-137-9.us-west-1.compute.amazonaws.com 'cd /var/www/dock-tok-backend && git pull'
+    # Delploy
+    - echo "Deploy complete"
+  after_script:
+    - echo "Remove the SSH FILE "
+    - rm -f ~/.ssh/*
+    - cd ~/.ssh
+    - ls
+    - echo "====== Deploy to production server END ======"
+  environment:
+    name: deploying
+  only:
+    - stage
